@@ -10,7 +10,7 @@
 
 항목 |`c` | `p`
 -----|----|-----
-type | char | ?
+type | char | pointer
 value | 'a'(임의의 문자, 여기선 'a' 로 했다) | 25292
 address | 25292 | 35154
 
@@ -71,7 +71,7 @@ int main(void) {
   ip=&x; // get x address
   y=*ip; // equals to y=x; y assigned x's value, 1
   *ip=0; // equals to x=0; x assigned 0, now x == 0
-  ip = &z[0]; // get z[0]'s address, now &ip == z[0]
+  ip = &z[0]; // get z[0]'s address, now *ip == z[0]
   printf("x:%d, y:%d",x,y); // x:0, y:1
 }
 ```
@@ -127,9 +127,9 @@ int a[10];
 int *pa; // pointer of a
 pa = &a[0]; // now *pa == a[0]
 x = *pa; // equals to x = a[0], if a[0]'s value was 0, x has value 0
-*(pa+1) == a[1]; // true
+*(pa+1) == a[1]; // 1, true
 ```
-`pa`는 `a[0]`의 주소를 가지고 있었기 때문에 1만 더하면 `a[1]`의 주소를 가지게 되고 * 연산자를 쓰게 되면 `*pa`는 `a[1]`과 동치(equivalent)가 된다.
+`pa`는 `a[0]`의 주소를 가지고 있었기 때문에 1만 더하면 `a[1]`의 주소를 가지게 되고 * 연산자를 쓰게 되면 `*(pa+1)`는 `a[1]`과 동치(equivalent)가 된다.
 
 #### a는 a[0]의 주소를 가진 포인터!
 배열로 선언된 변수 자체는 이름으로 쓸 때 첫번째 원소의 주소와 같기 때문에 다음 두 문장은 equivalent 하다.
@@ -235,3 +235,385 @@ void afree(char *p){
 **포인터끼리의 연산은 오로지 배열 내의 주소와 그 주소로부터의 오프셋을 위한 것**이다.
 
 그렇게만 생각하면 할 수 있는 것과 없는 것이 구분된다.
+
+### 5.5 Character Pointers and Functions
+```c
+char amessage[] = "now is the time";
+char *pmessage = "now is the time";
+```
+언뜻 같아 보이는 문자열 선언이지만 차이가 있다.
+
+`amessage`는 배열이며 끝에 `\0`이 있고 각각의 문자를 바꿀 수도 있지만 항상 같은 주소에 저장된다. 반면 `pmessage`는 포인트이고 가리키는 위치를 바꿀 수 있지만 내용을 바꾸는 것은 정의되어 있지 않다(바꿀수 있긴 하다, 그러나 책에서 이에 대한 더 자세한 설명은 나오지 않는다).
+
+이 절에서는 함수가 받는 인자로서의 포인터를 어떻게 다루는지 함수들을 보면서 알아보자.
+
+`strcpy`의 예(string copy)
+```c
+void strcpy(char *s, char *t){
+  while(*s++ = *t++) ;
+}
+```
+위의 식은 간단명료하게 포인터와 배열 call by value의 개념을 함축시켰다.
+즉, call by value로 받았기에 `while`문 안에서 `++` 연산을 해도 본래 포인터 s가 가리키는 주소는 변하지 않으며, `++`연산을 할 수 있는 이유는 문자열의 인덱스간 주소차이가 1씩 나는 배열과 같은 형태이기 때문이다.
+
+문자열, 배열의 끝은 `\0`이고 이는 `0`을 리턴하므로 `while`문이 종료되는 조건에도 부합된다.
+
+`strcmp`의 예(string compare)
+```c
+int strcmp(char *s, char *t){
+  for(; *s == *t; s++, t++)
+    if(*s == `\0`)
+      return 0;
+  return *s - *t;
+}
+```
+두 문자열을 사전 처럼 순서를 비교하는 함수 `strcmp`도 마찬가지다. 포인터만 넘겨주고 call by value라는 것을 이용하여 변수처럼 사용하면 함수가 간결해진다.
+
+`++`, `--`연산자를 이용하면 스택의 `push`, `pop`을 아주 쉽게 표현할 수 있다.
+```c
+*p++ = val; // push and add index
+val = *--p; // pop top of stack
+```
+
+### 5.6 Pointer Arrays : Pointers to Pointers
+포인터도 일종의 변수이기 때문에 포인터들로 이루어진 배열도 가능하다. 설명을 위해서 문자로 이루어진 행의 순서를 사전순서로 정렬하는 프로그램을 보자.
+
+각 행의 첫번째 문자의 포인터를 가진 배열을 만들면 편하다. 비교는 단순히 두 행의 포인터를 `strcmp`에 보내주면 되고, 바꾸고자 할 때는 배열상의 포인터만 바꿔주면 되기 때문이다.
+
+함수식은 생략한다. 다만 다음 선언이 포인터들의 배열이다.
+```c
+char *lineptr[MAXLINES];
+```
+이렇게 하면 `lineptr` 는 `MAXLINES`개의 요소로 이루어진 배열이 된다. 그리고 각 요소는 "`char`형 변수의 포인터"이다. 즉 `lineptr[i]`는 (`char`를 가리키는)포인터이고 `*lineptr[i]`는 포인터가 가리키는 한행의 첫문자이다. 
+
+```
+0x00001 => lineptr[0] => 0x31521 == "a new book"의 첫번재 문자 'a'의 포인터 
+0x00002 => lineptr[1] => 0x12092 == "bravo"의 첫번째 문자 'b'의 포인터
+...
+```
+이런식이다. 즉 `lineptr`은 그 자체로 배열이기 때문에 인덱스간 주소차이가 1씩나지만, 각 원소들은 다른 배열의 포인터를 가지고 있다는 점이 중요하다. 위의 예시값을 이용하면 다음과 같은 식이 성립한다.
+```
+*(lineptr + 1) == lineptr[1]
+*(*(lineptr + 1) + 1) == 'r'
+```
+`*(lineptr+1)`은 두번째 행인 `"bravo"`의 첫문자 `'b'`의 포인터이고 거기다 1을 더해 가지고 있는 값을 반환했으니 `'r'`이 나오는 것이다.
+
+### 5.7 Multi-dimensionalArrays
+C는 다차원 배열을 제공해주지만 포인터의 배열보다는 많이 사용되지 않는다.
+
+월-일을 그 해의 몇번째 날짜인지 계산하는 함수 `day_of_year`와 그 반대로 그 해의 몇번째 날짜를 월-일로 바꾸는 함수 `month_day`를 만들어보자.
+
+두 함수는 같은 정보로 실행되는데 그 정보는 어느 달이 며칠가지 있는지와 어느 해가 윤년인지 하는 것이다. 이 정보를 가지고 있는 배열과 두 함수는 다음과 같다.
+
+```c
+static char daytab[2][13] = {
+  {0,31,28,31,30,31,30,31,31,30,31,30,31},
+  {0,31,29,31,30,31,30,31,31,30,31,30,31}
+};
+// 13개의 원소를 가진 배열을 원소로 하는 사이즈 2짜리 배열 선언
+// data type은 int로 하는게 맞지만 char형으로 표현할 수 있다는 것을 보여주기위해 씀
+// 배열 리터럴은 {}이고, 여기서는 해당 월의 숫자가 그대로 인덱스로 들어가게 하기 위해 
+// 0번째는 0으로 대입해주어 총 13의 길이가 됨
+int day_of_year(int year, int month, int day){
+  int i, leap;
+  leap = year%4 == 0 && year%100 !=0 || year%400 == 0;
+  // leap는 윤년이면 1 아니면 0이 된다.
+  for(i = 1; i < month; i++){
+    day+=daytab[leap][i];
+    // 윤년인지 아닌지, 그리고 몇번째 달인지에 따라 daytab의 일수가 더해진다.
+  }
+  return day;
+}
+
+void month_day(int year, int yearday, int *pmonth, int *pday){
+  int i, leap;
+  leap = year%4 == 0 && year%100 !=0 || year%400 == 0;
+  for(i=1; yearday > daytab[leap][i]; i++){
+    yearday -= daytab[leap][i]
+    // 해당년의 몇일짼지가 yearday이고 1월부터 차례로 일수를 빼주어 몇월인지 캐치한다.
+  }
+  *pmonth = i; // 월을 받아들인 포인터가 가리키는 값에 입력해준다.
+  *pday = yearday; // 지금은 yearday가 해당 월의 총 일수보다 작은 상태이므로 그냥 그대로 대입하면 된다.
+}
+```
+만약 다차원 배열 자체를 인수로 함수에 넘길 경우엔 다음과 같이 써준다.
+```c
+f(int daytab[2][13]){...}
+f(int daytab[][13]){...}
+// 2차원 배열을 매개변수로 사용할 때 첫번째 index는 포인터로 전달되므로 써줄 필요가 없다.
+f(int (*daytab)[13]){...}
+// 따라서 이런 표현도 가능하다. a[] 와 *a는 인자로서 equivalent이므로.
+// 다만 연산자 우선순위가 []가 더 높아서 괄호를 써주었다.
+```
+
+### 5.8 Initialization of Pointer Arrays
+몇 번째 달인지 알려 주면 그 달의 이름을 출력하는 함수 `month_name(n)`을 만들어보자. 출력은 이름을 가리키는 포인터가 될 것이다. 함수 `month_name`은 문자열을 원소로 가지고 있다가 이 함수가 호출될 때 적절한 원소를 가리키는 포인터를 리턴한다.
+```c
+char *month_name(int n){
+  static char *name[] = {
+    "Illegal month",
+    "January",
+    "February",
+    ...
+  }
+  return (n < 1 || n > 12) ? name[0] : name[n];
+}
+```
+문자를 가리키는 포인터의 배열로 name을 선언했다.
+
+우리는 이것만 기억하면 된다. 포인터를 원소로 갖는 배열은 `dataType *variableName[]`로 선언한다. 그리고 바로 값을 할당(즉, 초기화)할 수 있는데 `{}`리터럴을 이용한다.
+
+### 5.9 Pointers vs. Multi-dimensionalArrays
+```c
+int a[10][20];
+int *b[10];
+```
+다차원 배열과 포인터를 원소로하는 배열은 차이가 있다.
+`a`는 2차원 배열이므로 200개의 정수가 한곳에 모여 저장되어있다. 그래서 `a[row][col]`의 위치는 처음으로부터 `20*row + col`번째가 된다. `b`에서는 10개의 포인터가 선언되고 초기화는 이루어지지 않았다. 초기화를 하려면 초기화를 위한 문장을 써야한다. `b`의 각포인터가 20개 요소의 배열을 가리키고 있다면, 필요한 전체 메모리는 정수 200개와 10개의 포인터만큼이 된다. 즉 `b`의 경우가 더 많은 메모리가 소요된다. `b`의 장점은 각 행의 길이가 달라도 된다는 점이다. 다시 말하면 `b`의 포인터는 요소 20개인 배열을 가리킬 수도 있고, 20개가 아닌 배열도 가리킬 수 있다.
+
+헷갈리지 않기 위해 이것만 기억하자.
+
+**다차원 배열은 원소가 모두 실제 값이며, 포인터 배열은 원소가 각각 다른배열을 가리킬 수 있는 포인터이다.**
+
+따라서 포인터 배열에서 원소가 가리키는 배열간에 주소의 연속성은 없으며, 포인터도 변수이기 때문에(값으로 주소를 가지고 있어야 하니까) 메모리를 더 먹는 것이다.
+
+```c
+char *name[] = {"Illegal month", "Jan", "Feb", "Mar"};
+char aname[][15] = {"Illegal month", "Jan", "Feb", "Mar"};
+```
+#### `name`의 경우
+인덱스 | 해당 인덱스의 값 | 그 값이 가리키는 것
+-|-|-
+0|1023| 'I'
+1|4012|'J'
+2|5029|'F'
+3|1204|'M'
+각 인덱스의 값은 연속적이지 않은 메모리주소이며 그 것은 각기 다른 문자열을 가리키는 포인터이기 때문이다.
+
+#### `anmae`의 경우
+인덱스 | 해당 인덱스의 값 | 그 값이 가리키는 것
+-|-|-
+0|0| 'I'
+1|15|'J'
+2|30|'F'
+3|45|'M'
+각 인덱스의 값은 15씩 차이가 나는 주소이고 이것은 다차원 배열이 모두 연속적 주소를 가지며 한공간에 모여있기 때문이다. 즉 `"Illegal month"`는 0~14까지의 주소를 사용하고 `"Jan"`은 15~30까지의 주소를 사용한다고 보면 된다.
+
+### 5.10 Command-line Arguments
+C를 지원하는 환경에서 어떤 프로그램을 실행할 때 Command-line argument를 프로그램에 넘겨주는 것이 가능하다. 우리가 함수 `main`을 실행할 때 두 개의 매개변수가 전달된다.
+- `argc` : 그 프로그램을 실행하기 위한 매개변수의 개수
+- `argv` : 매개변수들의 모임인 문자열을 가리키는 포인터
+
+이런 문자열을 다룰 때 보통 몇중으로 되어 있는 포인터를 사용하게 된다.
+`echo`라는 프로그램의 예시를 보자.
+```bash
+echo hello, world
+```
+출력은 다음과 같다.
+```bash
+hello, world
+```
+`argv[0]`은 프로그램 자신의 이름에 쓰인다. 따라서 `argc`는 최소 1개가 된다. `argc`가 1이라는 말은 커맨드 라인으로 부터온 매개변수가 없다는 뜻이다. 위의 `echo` 예는 `argc`가 3이며 `argv[0]`은 `"echo"`, `argv[1]`은 `"hello"`, `argv[2]`은 `"world"`이다. 첫번째 매개변수는 `argv[1]`이고 마지막 매개변수는 `argv[argc-1]`이다. 그리고 `argv[argc]`는 null 포인터가 된다.
+
+`argv`로 들어온 매개변수를 출력하는 함수를 작성해보자
+```c
+#include <stdio.h>
+
+int main(int argc, char *argv[]){
+  while(--argc>0)
+    // argc는 사이즈이므로 1을 빼고 시작해야 인덱스로 쓸 수 있다.
+    // 하지만 여기서는 그냥 전체사이즈 보다 한번 덜 돌게 만들기위해 쓰였다.
+    // 그냥 ++argv를 저 자리에 넣고 밑에 *argv를 해주는게 더 가독성이 좋을 것 같다.
+    printf("%s%s", *++argv, (argc>1) ? " " : " ");
+    // argv[0]은 호출된 함수의 이름(여기에선 main)이므로
+    // 1을 더한 것부터 써주어야 인자만 출력할 수 있다.
+  printf("\n");
+  return 0;
+}
+```
+이번엔 입력한 문자열내에 패턴을 찾는 프로그램을 만들어보자. 패턴은 커맨드라인 매개변수로 받는다.
+```c
+#include <stdio.h>
+#include <string.h>
+#define MAXLINE 1000
+
+int getline(char *line, int max); // 메인에서 쓰기 위해 선언만 해놓았다.
+// 그전 챕터에 이 함수를 찾을 수 있다. 여튼 입력문자열을 받는 함수
+
+main(int argc, char *argv[]){
+  char line[MAXLINE];
+  int found = 0;
+  
+  if(argc != 2)
+    printf("Usage : find pattern\n");
+    // 함수 이름과 함께 1개의 패턴을 받아야 하니까 argc가 2여야 한다.
+    // 그게 아닐때 패턴 찾는거라고 알려주는 거다.
+  else
+    while(getline(line,MAXLINE)>0)
+      // EOF가 아닐 때까지 문자열을 받는다.
+      if(strstr(line,argv[1])!=NULL){
+        // strstr은 line내 argv[1]이 일치하는 첫 번째 문자의 포인터를 리턴하는 함수다.
+        // 못 찾으면 NULL을 리턴한다.
+        printf("%s", line);
+        // 그리고 일치하는 문자를 가진 문장을 출력한다.
+        found++;
+      }
+  return found;
+  // 여기서는 총 몇번 등장하는지가 리턴된다.
+}
+```
+이번엔 `optional argument`를 붙여보자. command line에서 `-`를 붙여 나타내는 일종의 스위치같은 것이다. 다음 두개를 만들 것이다.
+- `-x` : 패턴과 일치하지 않는 라인을 출력하는 옵션
+- `-n` : 행의 번호를 함께 출력하는 옵션
+
+이렇게 쓰면
+```bash
+find -x -n pattern
+```
+은 "패턴이 맞지 않는 행"을 "행번호와 함께 출력"할 것이다. 선택 매개변수는 순서를 바꾸어써도 괜찮아야 하고, 묶어서 써도 괜찮아야하며 프로그램의 내용은 선택매개변수의 수에 영향을 받지 않아야 한다.
+
+```c
+#include <stdio.h>
+#include <string.h>
+#define MAXLINE 1000
+
+int getline(char *line, int max);
+
+main(int argc, char *argv[]){
+  char line[MAXLINE]; // 한 행씩 저장할 변수
+  long lineno = 0; // 행번호를 나타내는 정수변수
+  int c, except = 0, number = 0, found = 0;
+  // -x에 대한 스위치 역할을 하는 except 변수
+  // -n에 대한 스위치 역할을 하는 number 변수
+  // 총 찾은 카운트를 의미하는 found
+  // 커맨드라인 매개변수로 들어온 녀석을 문자 1개 씩 저장할 c
+  while(--argc > 0 && (*++argv)[0] == '-')
+    // 먼저 받아들인 인자들 중 첫번째 문자가 '-'인 인자를 찾는다.
+    while(c = *(++argv[0]))
+      // 그럼 그 인자의 두번째 문자부터(++argv[0]이므로) 마지막까지를 루프로 돌려본다.
+      switch(c){
+        case 'x':
+          except = 1;
+          break;
+          // 'x'옵션일경우 except를 1로 만들어 추후에 동작할 수 있게한다.
+        case 'n':
+          number = 1;
+          break;
+          // 'n'옵션일경우 number를 1로 만들어 추후에 동작할 수 있게한다.
+        default:
+          printf("find: illegal option %c\n", c);
+          argc = 0;
+          found = -1;
+          // 그외에 '-'뒤에 붙은 문자들은 옵션이 아니므로 argc를 0으로만들어
+          // 뒤이어 올 조건문에서 루프를 실행하지 않게 하며 
+          // found를 -1로 리턴한다.
+          break;
+      }
+  if(argc != 1)
+    printf("Usage: find -x -n pattern\n");
+    // 위에서 --argc > 0  루프를 돌아서 정상적인 경우 argc는 1이 되어야 한다.
+  else
+    while(getling(line,MAXLINE) > 0){
+      // 역시 EOF까지 행을 읽으며
+      lineno++;
+      // 행번호를 하나씩 증가시킨다.
+      if((strstr(line,*argv)!=NULL) != except){
+        // (strstr(line,*argv)!=NULL)에서
+        // 일치하는 문자열이 있다면 1이 리턴되고 
+        // except기 0 이었다면 그것이 출력되지만
+        // except가 1 인경우 괄호안의 expression이 0일 때 즉,
+        // 일치하지 않는 경우가 출력되므로 의도에 맞다.
+        if(number)
+          // 행번호를 출력하는 옵션을 넣을 경우 number가 1이 되므로 아래가 실행된다.
+          printf("%ld:",lineno);
+        printf("%s",line);
+        found++;
+      }
+    }
+  return found;
+}
+```
+### 5.11 Pointers to Functions
+C에서 함수는 변수가 아니지만 함수의 포인터는 정의할 수 있다. 이 포인터는 매개변수로 사용될 수도 있고 배열의 원소로 사용될 수도 있는 등 여러가지 방법으로 조작이 가능하다.
+
+5.6절에서 만들었던 프로그램을 고쳐 optional argument `-n`이 있으면 정렬이 사전식이 아니라 숫자 크기 순으로 하는 프로그램을 만들어보자.
+
+정렬은 크게 세 부분으로 나뉜다.
+1. 두 대상을 비교하는 부분
+2. 두 대상체의 순서를 뒤집는 부분
+3. 전체의 순서가 바로 될 때까지 비교와 교환을 계속하는 부분
+
+우리가 작성하려고 하는 프로그램은 숫자정렬과 사전식 정렬의 두가지 동작이 필요하므로 비교하는 부분은 두가지가 있어야 한다.
+
+두 행을 사전식으로 비교하는 것은 `strcmp`를 사용하면 되고 숫자 크기를 비교하는 것은 `numcmp`를 만들면 된다. 둘다 `int` 출력을 할 수 있기 때문에 함께 사용할 수 있다.
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+#define MAXLINES 5000
+char *lineptr[MAXLINES];
+
+int readlines(char *lineptr[], int nlines);
+int writelines(char *lineptr[], int nlines);
+
+void qsort(void *lineptr[], int left, int right, int (*comp)(void *,void *));
+int numcmp(char *, char *);
+
+main (int argc, char *argv[]){
+  int nlines;
+  int numeric = 0; // 커맨드라인 '-n'옵션에 따라 1이 되고 숫자정렬이 된다.
+
+  if(argc > 1 && strcmp(argv[1],"-n") == 0){
+    // strcmp 값이 0이라는 것은 똑같은 문자열을 의미하므로 
+    // -n 옵션이 있는지에 대한 조건문이다.
+    numeric = 1;
+  }
+
+  if((nlines = readlines(lineptr,MAXLINES))>=0){
+    qsort((void **) lineptr, 0, nlines-1, (int (*)(void*, void*)) (numeric ? numcmp : strcmp));
+    writelines(lineptr,nlines);
+    return 0;
+  }else{
+    printf("input too big to sort\n");
+    return 1;
+  }
+}
+```
+`qsort`에서 파라미터로 아주 복잡한 유형이 눈에 띈다.
+```c
+int (*comp)(void *,void *)
+```
+대강 int를 리턴하는 포인터인데 좀 복잡해 보인다. (*comp)는 포인터가 가리키는 실제 값이랑 같다는 걸 떠올리자. 그럼 이런식으로 바꿔 볼 수 있다. `int something(void *, void *)` 어떻게 보이는가? 그렇다. 정확히 함수리터럴이다.
+
+Javascript에서의 callback function처럼 함수를 포인터로 전달하기 위해 저런 문법을 쓴 거다. 저렇게 처리해줌으로써 compare함수로 어떤 함수든 받아들일 수 있게 된다. 다만 그 형식이 매개변수 두개를 받아서 정수형 리턴을 갖는 함수라는 제한만을 걸어뒀을 뿐.
+
+qsort함수를 보자
+```c
+void qsort(void *v[], int left, int right, int (*comp)(void *, void *)){
+  int i, last;
+  void swap(void *v[], int, int);
+
+  if(left >= right)
+    return;
+  swap(v, left, (left+right)/2);
+  last = left;
+  for(i=left+1; i<= right; i++)
+    if((*comp)(v[i],v[left])<0)
+      swap(v, ++last, i);
+  swap(v, left, last);
+  qsort(v, left, last-1, comp);
+  qsort(v, last+1, right, comp);
+}
+```
+`qsort`에 대한 알고리즘은 앞절에서 다루었다. 여기서는 콜백함수처럼 매개변수로 받은 함수의 포인터 `comp`를 `qsort`함수내에서 어떻게 사용하는지를 보자.
+`if((*comp)(v[i],v[left])<0)`에서 `comp`는 함수의 포인터이므로 `*comp`가 함수가 되어 함수를 호출하는 것이다. 그리고 괄호는 꼭 있어야 한다.
+
+```c
+int *comp(void *, void*);
+int (*comp)(void *, void*);
+```
+는 다르다. 첫번째는 comp가 함수인데 리턴 값이 정수의 포인터라는 뜻이다.
+두번째는 우리가 아는 것처럼 함수의 포인터이다.
+
+### 5.12  Complicated Declarations
