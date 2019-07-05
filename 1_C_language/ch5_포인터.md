@@ -617,3 +617,39 @@ int (*comp)(void *, void*);
 두번째는 우리가 아는 것처럼 함수의 포인터이다.
 
 ### 5.12  Complicated Declarations
+포인터 개념을 여러번 중첩해서 쓸 수록 선언문은 아주 복잡해진다.
+다음 두 선언문은 서로 다르다.
+```c
+int *f(); // 정수형 포인터를 리턴하는 "함수"
+int (*pf)(); // 정수를 리턴하는 함수의 "포인터"
+```
+복잡하게 얽힌 선언문을 작성하는 좋은 방법 중 하나는 6.7절에서 다룰 `typedef`를 사용하는 것이다. 또 하나는 선언문을 말로 표현해주는 함수와 그 역동작을 하는 함수다.
+
+우선 선언문을 설명으로 바꾸어주는 함수 `dcl`에 대해 설명한다. 실행 사례 몇가지를 보자.
+```
+char **argv
+  argv : pointer to pointer to char
+int (*daytab)[13]
+  daytab : pointer to array[13] of int
+int *daytab[13]
+  daytab : array[13] of pointer to int
+void *comp()
+  comp : function returning pointer to void
+void (*comp)()
+  comp : pointer to function returning void
+char (*(*x())[])()
+  x: function returning pointer to array[] of pointer to function returning char
+```
+`dcl`은 C의 선언에 관한 문법을 그대로 적용한 프로그램이다.
+구조는 다음과 같다.
+```
+dcl :         optional *'s direct-dcl
+direct-dcl :  name
+              (dcl)
+              direct-dcl()
+              direct-dcl[optional size]
+```
+하나의 `dcl`은 하나의 `direct-dcl`앞에 *가 붙어 포인터가 되는 것이고.
+`direct-dcl`뒤에 ()나 []가 붙는 것도 `direct-dcl`이다.
+
+여튼 중요한 것은 포인터가 들어가면서 복잡해지는 변수의 선언을 문법적으로 분석하여 해석해주는 것이 `dcl`프로그램이다. 그게 전부다.
