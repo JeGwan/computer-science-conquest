@@ -302,7 +302,7 @@ main(){
 
 한가지 해결 방법은 새로운 단어가 들어올 때마다 적당한 위치에 그 단어를 넣음으로써 들어온 단어들을 항상 정렬시켜 두는 것이다. 이것을 위해 이진트리(binary tree)라고 불리는 자료구조를 사용해본다.
 
-트리는 서로 다른 각 단어마다 하나의 마디(node)를 갖는데 각 마디는 다음과 같은 정보를 갖는다.
+트리는 서로 다른 각 단어마다 하나의 노드(node)를 갖는데 각 노드는 다음과 같은 정보를 갖는다.
 
 - 단어의 포인터
 - 발견된 횟수
@@ -313,7 +313,7 @@ main(){
 
 "now is the time for all good men to come to the aid of their party"라는 문장으로부터 정렬된 이진트리는 다음과 같다.
 
-<div style="text-align:center"><img src="./ch6.binarytree.JPG"></div>
+<p style="text-align:center;"><img src="./ch6.binarytree.JPG"></p>
 
 새로운 단어가 그 트리에 있나 없나를 알기 위해서는 가장 위의 노드부터 시작하여 그 노드에 저장된 것과 새로운 단어를 비교한다. 두 단어가 일치하면 그 단어는 트리에 있는 것이고, 만약 그 단어가 노드의 단어보다 작으면 왼쪽 자식 노드와 비교하고 그렇지 않으면 오른쪽 자식 노드와 비교한다. 비교된 방향으로 맞는 단어가 없으면 새로운 단어는 트리에 없는 것이고 새로운 단어를 추가하기 위해 적당한 빈 공간이 마련된다. 이러한 탐색은 어떠한 노드에 일치하지 않으면 그 자식 노드에 대해 똑같은 과정을 하게 되므로 recursive한 과정이 된다. 각 노드를 다시 살펴보면 다음 네 개의 요소로 구성되어 있다.
 ```c
@@ -322,5 +322,99 @@ struct tnode{
   int count;
   struct tnode *left;
   struct tnode *right;
+}
+```
+이렇게 노드를 순환적으로 선언하는것이 이상하게 보이지만, 사실 자기 자신을 포함하게 되는 것은 오류가 될테지만 tnode의 포인터 값을 가지는 것이므로 문제가 없다.
+
+이제 프로그램을보자
+#### Binary tree generator
+```c
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#define MAXWORD 100
+
+struct tnode *addtree(struct tnode *, char *);
+// 루트노드의 포인터와 문자배열을 받아 트리에 문자를 삽입한 후 다시 트리의 포인터를 반환한다.
+void treeprint(struct tnode *);
+// 노드의 포인터를 받아서 트리를 출력해주는 함수다.
+int getword(char *, int);
+// 이 함수는 단어를 입력받아 그 단어를 첫 번째 매개변수인 배열에 복사한다.
+
+main(){
+  struct tnode *root;
+  char word[MAXWORD];
+  root = NULL;
+  while (getword(word,MAXWORD) != EOF)
+    if(isalpha(word[0]))
+      root = addtree(root,word);
+  treeprint(root);
+  return 0;
+}
+```
+`addtree`루틴은 순환적이다. main에서 읽어 들인 한 단어는 트리의 맨 위에 놓인다. 각 단계마다 그 단어는 그 노드에 있는 단어와 비교되어서 결과에 따라 왼쪽이나 오른쪽 자식노드로 가서 트리를 순환적으로 호출하게 된다.
+
+결국 그 단어는 그 트리에 있는 어떤 단어와 일치해서 카운트를 하나 증가시키든지 또는 일치하지 않아서 null포인터를 만나 그 노드가 트리에 첨가되어야 함을 나타내게 된다. 만일 새로운 노드가 만들어지면 addtree는 그 노드에 대한 포인터를 리턴시키고 그 포인터를 해당되는 바로 위의 부모노드에 기록한다.
+
+#### addtree function
+```c
+struct tnode *talloc(void);
+char *strdup(char *);
+// addtree : 단어 w의 노드를 p에 혹은 p의 밑에 추가시키는 함수
+struct tnode *addtree(struct tnode *p, char *w){
+  int cond;
+  if(p == NULL){
+    // p가 없을 경우 새로운 노드를 만든다.
+    p = talloc();
+    p->word = strdup(w);
+    p->count = 1;
+    p->left = p->right = NULL;
+  }else if((cond = strcmp(w,p->word)) == 0){
+    // p가 있고, 두 단어를 비교했을 때 정확히 같은 단어라면 카운트를 증가시킨다.
+    p->count++;
+  }else if(cond<0){
+    // 더 값이 작은 단어라면(즉 사전식으로 앞에 있는 단어라면)
+    // 왼쪽 자식노드로 가서 addtree를 다시 한다.
+    // 이 식은 재귀적이기 때문에 적절한 위치를 만날 때 까지 계속 밑으로 내려갈 수 있다.
+    p->left = addtree(p->left,w);
+  }else{
+    // 반대로 값이 더 크다면 오른족 자식노드로가서 addtree를 한다.
+    p->right = addtree(p->right,w);
+  }
+  return p;
+  // 최종적으로 변경된 노드(값이 크거나 작았다면 새로운 노드가 삽입된 부모노드)
+  // 의 포인터 p를 반환한다.
+}
+```
+새로운 노드에 대한 기억장소는 노드를 기억할 수 있는 적당한 기억공간에 대한 포인터를 리턴시키는 talloc이라는 함수에 의해 배당된다(아마도 `struct tnode dummy, *p = &dummy; return p;`)식이 될거 같다).
+
+strdup에 의해 새로운 단어는 숨겨진 장소로 복사된다. 카운터는 초기화되고 두 개의 자식노드는 NULL값을 갖게 된다. 이 부분은 위에서 볼수있듯 새로운 노드가 추가될 때만 실행된다. 
+
+treenode는 정렬된 순서로 트리를 출력한다. 각각의 마디에서 먼저 왼쪽 자식노드를 출력한 후 그 단어를 출력하고 다음에 오른쪽 자식노드를 출력한다.
+#### treeprint
+```c
+void treeprint(struct tnode *p){
+  if(p!=NULL){
+    treeprint(p->left);
+    printf("%4d %s\n", p->count, p->word);
+    treeprint(p->right);
+  }
+}
+```
+#### talloc
+```c
+struct tnode *talloc(void){
+  return (struct tnode *) malloc(sizeof(struct tnode));
+}
+```
+#### strdup
+```c
+char *strdup(char *s){
+  char *p;
+  p = (char *) malloc(strlen(s)+1);
+  if(p != NULL){
+    strcpy(p, s);
+  }
+  return p;
 }
 ```
