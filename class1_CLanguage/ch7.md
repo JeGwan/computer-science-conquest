@@ -187,5 +187,280 @@ main(){
 ```
 `scanf` 명령문은 다음과 같이 쓴다.
 ```c
-
+int day, year;
+char monthname[20];
+scanf("%d %s %d", &day, monthname, &year);
 ```
+여기서는 포맷문자열로 세가지 데이터타입을 지정했고, 화이트스페이스로 구분했으며 해당 입력데이터를 day, monthname, year로 할당하기 위해 포인터로 매개변수를 전달했다(monthname은 배열이기 때문에 이미 포인터기 때문에 &가 없다).
+
+mm/dd/yy형태로 읽을 수도 있다.
+```c
+int day, month, year
+scanf("%d/%d/%d", &month,&day,&year);
+```
+
+위의 두가지 입력중 어떤 형태도 받아들일 수 있게 하려면 입력된 라인을 해당 포맷문자열에 일치하는지를 조건문 삼으면 된다.
+```c
+while(getline(line,sizeof(line))>0){
+  if(sscanf(line,"%d %s %d", &day, monthname, &year) == 3){
+    printf("valid : %s\n", line);
+  }else if(sscanf(line,"%d %s %d", &month, &day, &year) == 3){
+    printf("valid : %s\n", line);
+  }else{
+    printf("invalid : %s\n", line);
+  }
+}
+// 이 함수를 보면서 C에서 validation을 할 수 있는
+// 심플한 예시 같다는 생각이 들었다.
+```
+sscanf는 CLI에서 입력을 받는 것이아니라 애초에 문자열을 매개변수로 받아서 읽는 함수이다.
+
+### scanf : 터미널에서 입력을 받는다.
+```c
+int scanf(char *format, ...)
+```
+### sscanf : 문자열 매개변수를 통해 입력을 받는다.
+```c
+int sscanf(char *string, char *format, arg1, arg2, ...)
+```
+
+## 7.5. File Access
+여기서는 파일을 액세스하는 프로그램을 작성한다. 이 작업을 필요로 하는 프로그램으로 cat이 있다. cat은 여러개 파일의 내용을 표준 출력으로 보낸다. 즉 몇개 파일의 내용을 모아서 화면에 표시해준다. 예를 들어
+```bash
+cat x.c y.c
+```
+는 터미널에 x.c 파일과 y.c의 내용을 출력한다.
+
+문제는 x.c나 y.c 같은 파일 이름을 프로그램 내에서 어떻게 처리하느냐 하는 것이다.
+규칙은 간단하다. 읽거나 쓰기 전에 파일은 라이브러리 함수 fopen에 의해 열리면 된다.
+fopen은 x.c 따위의 이름을 받아들여서 파일을 읽고 쓰기 위해 사용하는 포인터를 리턴한다.
+
+이 포인터는 파일 포인터라고 불리며 파일에 관한 정보를 포함하는 구조체를 가리키는데, 이 구조체에는 버퍼의 위치와 버퍼 내에서의 문자의 위치, 파일이 읽기 위한 것인지 쓰기 위한 것인지, 에러나 EOF를 만나지 않았는지 등의 정보가 들어 있다.
+
+사용자는 세부 사항을 알 필요가 없다. `<stdio.h>`에 있는 표준 입출력 정의에 FILE이라는 구조체의 정의가 있기 때문이다. 파일 포인터를 위해서는 단지 다음과 같은 선언만 하면 된다.
+
+### 파일 포인터 선언
+```c
+FILE *fp; // 파일을 가리키는 포인터다
+FILE *fopen(char *name, char *mode);
+// 파일을 가리키는 포인터를 리턴한다.
+```
+FILE은 구조체의 이름이 아니라 데이터 타입의 이름이고 typedef(구조체 장에서 배웠던 커스텀 타입 디파인)에 의해 구현된다.
+
+프로그램에서 fopen은
+```c
+fp = fopen(name,mode);
+```
+와 같이 쓴다.
+
+fopen의 첫번째 매개변수는 문자열로 이루어진 파일의 이름이고, 두번째 매개변수는 문자열로 이루어진 mode인데 r(read), w(write), a(append) 가 있다.
+
+만일 writing과 appending 위한 파일이 없다면 파일은 새로 만들어진다. writing으로 이미 존재하는 파일을 열면 기존의 내용은 지워진다. 
+
+존재하지 않는 파일을 읽는 것은 에러이며 에러에는 허가되지 않는 파일을 읽을 경우 등 여러가지 원인이 있다. 만약 에러가 있을 때 fopen은 NULL을 리턴한다.
+
+다음으로 필요한 것은 열린 파일을 읽거나 쓰는 방법이다. 이를 위한 방법에는 여러가지가 있는데 그중 getc와 putc가 가장 간단하다.
+### getc
+getc는 파일로 부터 차례대로 한문자씩 읽어 리턴한다. getc에서는 사용하는 파일의 포인터가 필요하다. 파일의 끝이거나 에러가 발생하면 EOF를 리턴한다.
+```c
+int getc(FILE *fp)
+```
+
+### putc
+putc는 문자 c를 fp파일로 쓰고 쓰여진 문자를 리턴한다. 에러가 발생했다면 EOF를 쓰고 EOF를 리턴한다.
+```c
+int putc(int c, FILE *fp)
+```
+
+C프로그램이 처음 수행될 때 OS환경은 세개의 파일을 자동적으로 열고 세개 파일을 이ㅜ한 포인터를 배정한다. 이 파일들은 표준출력, 표준 입력과 표준 에러 출력이다.
+
+이에 대응하는 파일 포인터는 stdin, stdout, stdeff로 불리고 `<stdio.h>`에서 선언되어 있다. 대개 stdin은 키보드로 받고 stdout, stderr은 터미널에 출력하지만 파일이나 파이프로 출력되는 위치를 바꿀 수 있다.
+
+getchar와 putchar는 getc, putc, stdin, stdout으로 정의될 수도 있다.
+```c
+#define getchar() getc(stdin)
+#define putchar(c) putc((c),stdout)
+//getchar()라는 함수에 getc(stdin)을 할당한 거다.
+//putchar(c)라는 함수에 putc((c),stdout)을 할당한 거다.
+```
+
+파일의 정형화된 입력과 출력을 수행하기 위해 fscanf, fprintf를 사용할 수 있다. 첫번째 매개변수가 파일의 포인터인 것을 제외하면 scanf, printf와 같다. 두번째 매개변수는 포맷문자열이다.
+```c
+int fscanf(FILE *fp, char *format, ...)
+int fprintf(FILE *fp, char *format, ...)
+```
+이런 것을 바탕으로 우리는 이제 파일의 내용을 원하는 곳으로 출력하는 cat프로그램을 만들 수 있다. 만약 CLI에서 매개변수가 있다면 이들은 파일이름이나 기타 지시를 위한 것으로 해석되고 그렇지 않다면 우리가 직접입력하는 것을 처리한다.
+
+```c
+#include <stdio.h>
+
+main(int argc, char *argv[]){
+  FILE *fp;
+  void filecopy(FILE *, FILE *);
+
+  if(argc==1)
+    // 5장에서 배운것처럼 argv[0]은 자기 자신의 이름이다.
+    // 따라서 argc 즉 매개변수의 갯수가 1이라면
+    // 터미널에서 아무 매개변수도 들어오지 않은 것이다.
+    filecopy(stdin,stdout);
+    // 이 때는 입력과 출력을 터미널에서 한다.
+  else
+    while(--argc>0){
+      if((fp = fopen(*++argv,"r")) == NULL){
+        // 해당하는 파일이 없으면 없다고 출력해준다.
+        printf("cat : can't open %s\n", *argv);
+        return 1;
+      }else{
+        filecopy(fp,stdout);
+        // 여기서는 표준출력(즉 터미널)에 파일의 내용을 카피,
+        // 즉 출력해주었다.
+        // 즉 stdout을 파일 취급했다.
+        // 내부적으로 stdout은 받은 문자열을
+        // 터미널로 출력해준다.
+        fclose(fp);
+      }
+    }
+  return 0;
+}
+
+void filecopy(FILE *ifp, FILE *ofp){
+  // ifp : input file pointer
+  // ofp : output file pointer
+  int c;
+  while((c=getc(ifp))!=EOF){
+    putc(c,ofp);
+  }
+}
+```
+다음의 함수 fclose는
+```c
+int fclose(FILE *fp)
+```
+fopen의 역기능을 가진다. 이 함수는 fopen에 의해 설정된 external name과 파일 포인터 사이의 연결 상태를 해제하고 파일 포인터를 다른 파일에 재사용할 수 있게 한다. 또한 putc의 출력문자를 저장하는 버퍼를 없애 준다는 것이다.
+fclose는 프로그램이 정상적으로 끝났을 때는 각자의 열린 파일에 대해 자동적으로 호출된다. 즉 자동으로 포인터를 해제한다.
+## 7.6. Error Handllng-Stderr and Exit
+cat함수의 에러 처리 방법은 그다지 좋지 않다. 만약 파일 중 하나가 어떤 이유로 접근할 수 없을 때, 에러메시지가 출력문의 끝에서 나타난다. 출력을 파이프라인을 통해 파일로 저장했다면 이런 에러가 파일에 들어가는 것은 곤란하다.
+
+위의 문제를 해결하기 위해서 stderr로 불리는 또 하나의 stream을 stdin, stdout과 같은 방법으로 프로그램에서 할당하자. 출력을 터미널 또는 파일 어디로 지정하든 stderr의 에러문은 터미널에 나타난다.
+
+```c
+#include <stdio.h>
+
+main(int argc, char *argv[]){
+  FILE *fp;
+  void filecopy(FILE *, FILE *);
+  char *prog = argv[0];
+  // prog는 에러 출력시 프로그램 이름을 나타내기 위해 할당했다.
+
+  if(argc==1)
+    filecopy(stdin,stdout);
+  else
+    while(--argc>0){
+      if((fp = fopen(*++argv,"r")) == NULL){
+        // 해당하는 파일이 없으면 없다고 출력해준다.
+        fprintf(stderr,"%s : can't open %s\n",prog,*argv);
+        // 에러가 발생하면 프로그램 이름과
+        // 에러가 발생한 파일 이름을 출력한다.
+        exit(1);  
+      }else{
+        filecopy(fp,stdout);
+        fclose(fp);
+      }
+    }
+  if(ferror(stdout)){
+    fprintf(stderr, "%s: error writing stdout\n", prog);
+    exit(2)
+  }
+  exit(0);
+}
+```
+프로그램은 두가지 방식으로 에러를 알린다.
+
+첫째, fprintf에 의해 만들어진 에러메시지를 stderr로 보내면 터미널에 나타나게된다. 프로그램 이름을 argv[0]으로 부터 포함했으므로 다른 프로그램과 함께 사용되더라도 에러의 근원지를 알 수 있다.
+
+둘째, 표준 라이브러리 함수 exit을 사용한다. 이것이 호출되면 프로그램 수행이 끝나게 된다. exit의 리턴 값은 다른 프로그램에서도 사용할 수 있으므로 그 프로그램 수행의 성공여부를 검사할 수 있다. exit이 0을 리턴하게 되면 모든 게 잘되고 있는 것이고, 0이 아닌 값을 리턴하면 비정상적이라는 뜻이다. exit은 열린 파일에 대해 fclose를 호출하며 버퍼를 지우고 파일을 닫는다.
+
+**throw의 전신 같다!**
+
+main함수에 return _expr_ 으로 표현하거나 exit(_expr_)으로 표현하는 것은 같은 표현이다.
+exit은 다른 함수로부터 호출할 수 있는 유리한 점을 가지고 있다. ferror는 fp에 에러가 발생한다면 0이 아닌 값을 리턴한다(그래서 위의 조건문식이 올바르게 작동하는 것이다).
+
+출력 에러는 매우 드물긴 하지만 저장공간(HDD)이 꽉차있을 경우 발생할 여지가 있다. 그렇기 때문에 프로그램에서 이 점을 잘 검사해야 한다. feof(FILE *)는 ferror의 유사형이다. 이 함수는 파일의 끝을 발견하면 0이 아닌 값을 리턴한다(EOF!).
+
+## 7.7. Line Input and Output
+표준 라이브러리는 이전 장들에서 사용한 getline 함수와 유사한 fgets 입력함수를 가지고 있다.
+```c
+char *fgets(char *line, int maxline, FILE *fp)
+```
+fgets는 다음 라인(`\n`를 포함한)을 파일 fp로부터 문자열인 line에 읽어 들이는데, 최대 maxline-1 의 문자를 읽을 수 있다. 입력 완료된 라인은 '\0'에 의해 종료된다. 보통 fgets는 line을 리턴하는데, 파일의 ㄲ끝이거나 에러를 만났을 시에는 NULL을 리턴한다. 
+
+출력함수 fputs는 '\0'을 포함하지 않는 문자열을 파일에 출력시킨다.
+```c
+int fputs(char *line, FILE *fp)
+```
+에러가 발생하면 EOF를 리턴하고, 나머지 경우에는 0을 리턴한다.
+
+gets와 puts는 stdin과 stdout과 stdout에 작용된다는 점이 fgets, fputs와 다른점이다(fgets, fputs의 f가 상징하듯 이 함수들은 파일에 적용된다).
+gets는 마지막의 '\n'을 제거하지만 puts는 그것을 추가한다.
+
+```c
+char *fgets(char *s, int n, FILE *iop){
+  // iop라는 파일로부터 라인 s를 최대 길이 n까지 읽고, 읽은 라인을 반환하는 함수다.
+  register int c;
+  register char *cs;
+  cs = s;
+  while(--n > 0 && (c=getc(iop)) != EOF)
+    // n 은 maxline이므로 maxline개 까지만 받는다.
+    // c 는 문자 하나를 받는다.
+    if((*cs++ = c) == '\n')
+      // cs라는 문자열의 인덱스에 c를 저장하고 1증가 시킨다.
+      // 그런데 동시에 이게 '\n'이 었다면 라인의 끝이므로 종료한다.
+      break;
+    *cs = '\0';
+    // 마지막에는 \0을 할당한다.
+    return (c == EOF && cs == s) ? NULL : s;
+    // 끝이 났따면 null을 리턴, 아니라면 라인을 리턴한다.
+}
+
+char *fputs(char *s, FILE *iop){
+  int c;
+
+  while(c = *s++){
+    putc(c,iop);
+    // 라인 s에서 '\0'이 나오기 전까지 한글자씩읽어 iop에 집어넣는다.
+  }
+  return ferror(iop) ? EOF : 0;
+}
+```
+fgets를 사용해서 getline을 작성하는 것은 어렵지 않다.
+```c
+int getline(char *line, int max){
+  if(fgets(line,max,stdin) == NULL){
+    return 0;
+  }else{
+    return strlen(line);
+  }
+}
+```
+
+## 7.8. Miscellaneous Functions
+표준 라이브러리는 상당히 다양한 함수를 제공한다. 이 절에서는 그중 자주 쓰이는 것에 대해 설명했다.
+
+### 문자열 조작
+`<string.h>`에 있는 함수들은 다음과 같다.
+매개변수의 이름에서 s,t 는 char * 이고, c와 n은 int이다.
+|함수|기능|
+|-|-|
+|strcat(s,t)|t를 s의 끝에 연결시킨다.|
+|strncat(s,t,n)|t중 n개의 문자를 s의 끝에 연결시킨다.|
+|strcmp(s,t)|s-t를 리턴한다.|
+|strncmp(s,t,n)|strcmp와 같지만 처음 n개의 문자만이 대상이다.|
+|strcpy(s,t)|s에 t를 복사한다.|
+|strncpy(s,t,n)|t의 n개 문자를 s에 복사한다.|
+|strlen(s)|s의 길이를 리턴한다.|
+|strchr(s,c)|s에서 처음 발견된 문자 c의 포인터를 리턴하거나 존재하지 않으면 <br> NULL을 리턴한다.|
+|strrchr(s,c)|s에서 마지막에 발견된 문자 c의 포인터를 리턴하거나 존재하지 않으면 <br>NULL을 리턴한다.|
+
+### 문자분류와 변환
+`<ctype.h>`의 함수는 다음과 같다. c는 unsigned char로 나타낼 수 있는 int거나 EOF이다.
+`
