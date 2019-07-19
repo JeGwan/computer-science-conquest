@@ -1,8 +1,8 @@
-## 6. Structures
+# 6. Structures
 구조체란 하나의 이름으로 불릴 수 있는 서로 다른 타입의 변수들의 모임이다(PASCAL에서는 records). 구조체는 큰 프로그램에서 여러 변수들의 모임을 하나의 독립된 양으로 취급하게 해주므로 복잡한 자료를 다루는 것이 쉬워진다.
 
 편히 생각하면 **객체**나 DB의 한 ROW라고 생각하면 되겠다.
-### 6.1 Basics of Structures
+## 6.1. Basics of Structures
 **구조체 선언**
 ```c
 struct point{
@@ -69,7 +69,7 @@ struct rect screen;
 // screen의 pt1이라는 멤버의 x좌표는 다음과 같다.
 screen.pt1.x;
 ```
-### 6.2 Structures and Functions
+## 6.2. Structures and Functions
 구조체로 할 수 있는 연산은 Copy, Assignment, 그리고 &로 구조체의 주소를 리턴하는 것밖에 없다. Copy와 Assignment는 함수로 인자를 넘기거나 값을 받는 것을 포함해서 명칭하는 것이다.
 
 구조체를 인자로 받아 연산을 하는 함수를 사용해보자. 최소 세가지 접근 방법이 있다.
@@ -77,7 +77,7 @@ screen.pt1.x;
 2. 하나의 구조체를 보내거나(`sqrt(pt)`)
 3. 포인터로 보내는 방법(`sqrt(&pt)`)
 
-#### 두개의 정수를 받아 point라는 구조체 리턴
+### 두개의 정수를 받아 point라는 구조체 리턴
 ```c
 struct point makepoint(int x, int y){
   struct point temp;
@@ -88,7 +88,7 @@ struct point makepoint(int x, int y){
 ```
 `makepoint`는 어떠한 구조체의 초기화나 멤버에 어떤 값을 넣는 함수로 사용할 수 있다.
 
-#### 함수를 통해 구조체의 초기화, 멤버에 값 할당
+### 함수를 통해 구조체의 초기화, 멤버에 값 할당
 ```c
 struct rect screen; // point 형 구조체 두개를 가지고 있는 rect형 변수 sreen 선언
 struct point middle; // point 형 구조체 middle 선언
@@ -100,7 +100,7 @@ middle = makepoint((screen.pt1.x+screen.pt2.x)/2,(screen.pt1.y + screen.pt2.y)/2
 // middle 이라는 point 타입 구조체에 makepoint함수를 통해 멤버값 초기화.
 ```
 
-#### 구조체를 매개변수로 받는 함수
+### 구조체를 매개변수로 받는 함수
 ```c
 struct point addpoint(struct point p1, struct point p2){
   p1.x += p2.x;
@@ -110,7 +110,7 @@ struct point addpoint(struct point p1, struct point p2){
 ```
 여기서는 구조체를 매개변수로 받고 구조체를 리턴해준다.
 
-#### 매개변수로 구조체와 구조체를 멤버로갖는 구조체를 받는 함수
+### 매개변수로 구조체와 구조체를 멤버로갖는 구조체를 받는 함수
 ```c
 // rect라는 사각형안에 point가 들어가 있으면 1 아니면 0을 리턴하는 함수
 // 왼쪽과 밑변은 사각형 영역에 포함하고 오른쪽과 윗변은 포함되지 않는다고 가정
@@ -122,7 +122,7 @@ int ptinrect(struct point p, struct rect r){
 ```
 그런데 사람에 따라서 왼쪽 아래에 있는점을 `pt2`로 넣을 수도 있으니 `rect`형 변수를 받아서 왼쪽 아래의 점을 `pt1`으로 넣는, 일종의 표준화 함수를 만들어보자.
 
-#### 표준화(canonical) 함수
+### 표준화(canonical) 함수
 ```c
 struct rect cononrect(struct rect r){
   struct rect temp;
@@ -134,7 +134,7 @@ struct rect cononrect(struct rect r){
 }
 ```
 
-#### 구조체의 포인터
+### 구조체의 포인터
 구조체의 포인터는 일반적인 방식과 같다.
 ```c
 struct point *pp
@@ -150,7 +150,7 @@ pp = &dummy;
 printf("origin is (%d,%d)\n", (*pp).x, (*pp).y);
 ```
 
-#### 포인터로부터 구조체 멤버의 접근
+### 포인터로부터 구조체 멤버의 접근
 ```c
 p->멤버
 ```
@@ -177,7 +177,7 @@ struct {int len; char *str;} *p;
 
 `*p->str` 은 사실상 `*(p->str)`이므로 str이라는 멤버가 가지고 있는 값을 의미한다.
 
-### 6.3 Arrays of Structure
+## 6.3. Arrays of Structure
 포인터로 이루어진 배열이 있듯 구조체로 이루어진 배열도 있다.
 
 문자열 `C`에서 사용되는 키워드중 어느 것이 몇 번 나왔는지 세는 프로그램을 생각해 보자.
@@ -188,7 +188,7 @@ int keycount[NKEYS];
 ```
 아니면 두 개의 배열 대신 구조체를 사용하는 것이 가능하다.
 
-#### 구조체로 이루어진 배열 선언
+### 구조체로 이루어진 배열 선언
 ```c
 struct key{
   char *word;
@@ -203,7 +203,7 @@ struct key{
 배열원소의데이터타입 배열의이름[배열의크기]
 ```
 
-#### 구조체 배열의 선언과 동시에 할당
+### 구조체 배열의 선언과 동시에 할당
 ```c
 struct key{
   char *word;
@@ -224,7 +224,7 @@ struct key{
 };
 ```
 
-#### 본격 키워드 세는 프로그램 작성
+### 본격 키워드 세는 프로그램 작성
 ```c
 #include <stdio.h>
 #include <ctype.h>
@@ -269,7 +269,7 @@ main(){
 #define NKEYS ((sizof keytab) / (sizeof keytab[0]))
 ```
 
-### 6.4 Pointers to Structures
+## 6.4. Pointers to Structures
 이번엔 문자열 C의 키워드 중 어떤 것이 몇 번 나왔는지 세는 프로그램을 다시 작성해보자.
 단 배열의 인덱스 대신 포인터를 쓰기로 한다. `main`과 `binsearch`를 조금 수정한다.
 ```c
@@ -297,7 +297,7 @@ main(){
 }
 ```
 
-### 6.5 Self-referential Structures
+## 6.5. Self-referential Structures
 이번엔 어떠한 입력에서 발생할 수 있는 모든 단어의 발생횟수를 셀 수 있는 좀 더 일반적인 문제를 푸는 함수를 작성해보자. 단어의 목록을 미리 알 수 없기 때문에 쉽게 정렬시켜 이진탐색을 사용할 수가 없다. 또한 단어가 나올 때 마다 그 단어가 이미 나타났던 것인지를 알기 위해 모든 단어를 뒤져볼 수도 없다. 프로그램이 너무 느려지기 때문이다(**O(n<sup>2</sup>)** 의 복잡도를 갖는다).
 
 한가지 해결 방법은 새로운 단어가 들어올 때마다 적당한 위치에 그 단어를 넣음으로써 들어온 단어들을 항상 정렬시켜 두는 것이다. 이것을 위해 이진트리(binary tree)라고 불리는 자료구조를 사용해본다.
@@ -327,7 +327,7 @@ struct tnode{
 이렇게 노드를 순환적으로 선언하는것이 이상하게 보이지만, 사실 자기 자신을 포함하게 되는 것은 오류가 될테지만 tnode의 포인터 값을 가지는 것이므로 문제가 없다.
 
 이제 프로그램을보자
-#### Binary tree generator
+### Binary tree generator
 ```c
 #include <stdio.h>
 #include <ctype.h>
@@ -356,7 +356,7 @@ main(){
 
 결국 그 단어는 그 트리에 있는 어떤 단어와 일치해서 카운트를 하나 증가시키든지 또는 일치하지 않아서 null포인터를 만나 그 노드가 트리에 첨가되어야 함을 나타내게 된다. 만일 새로운 노드가 만들어지면 addtree는 그 노드에 대한 포인터를 리턴시키고 그 포인터를 해당되는 바로 위의 부모노드에 기록한다.
 
-#### addtree function
+### addtree function
 ```c
 struct tnode *talloc(void);
 char *strdup(char *);
@@ -391,7 +391,7 @@ struct tnode *addtree(struct tnode *p, char *w){
 strdup에 의해 새로운 단어는 숨겨진 장소로 복사된다. 카운터는 초기화되고 두 개의 자식노드는 NULL값을 갖게 된다. 이 부분은 위에서 볼수있듯 새로운 노드가 추가될 때만 실행된다. 
 
 treenode는 정렬된 순서로 트리를 출력한다. 각각의 마디에서 먼저 왼쪽 자식노드를 출력한 후 그 단어를 출력하고 다음에 오른쪽 자식노드를 출력한다.
-#### treeprint
+### treeprint
 ```c
 void treeprint(struct tnode *p){
   if(p!=NULL){
@@ -401,13 +401,13 @@ void treeprint(struct tnode *p){
   }
 }
 ```
-#### talloc
+### talloc
 ```c
 struct tnode *talloc(void){
   return (struct tnode *) malloc(sizeof(struct tnode));
 }
 ```
-#### strdup
+### strdup
 ```c
 char *strdup(char *s){
   char *p;

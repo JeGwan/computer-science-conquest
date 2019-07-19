@@ -1,4 +1,5 @@
-### ex1. hello world 출력
+# 1. A Tutorial Introduction
+## 1.1. Getting Started
 ```c
 #include <stdio.h>
 int main(){
@@ -39,12 +40,12 @@ int main()
 로 정리할 수 있다.
 
 `\n`은 하나의 문자이다. 이러한 문자를 escape 문자라고 한다. 출력의 양식을 정해준다.
-#### escape 문자
+### escape 문자
 `\n` | `\t` | `\b` | `\\`
 -----|------|------|-----
 new line(return이라고도 한다)|tab|backspace| \
 
-### ex2. Fahrenheit-Celsius table
+## 1.2. Fahrenheit-Celsius table
 ```c
 #include <stdio.h>
 /*
